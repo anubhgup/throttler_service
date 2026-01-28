@@ -109,7 +109,7 @@ add_subdirectory(src/resource_manager)
 add_subdirectory(src/server)
 
 # Module 6: Client Library
-# add_subdirectory(src/client)
+add_subdirectory(src/client)
 
 # ============================================================================
 # Main Executable
