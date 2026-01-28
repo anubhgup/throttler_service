@@ -100,7 +100,7 @@ target_compile_options(throttling_proto PRIVATE -w)
 add_subdirectory(src/token_bucket)
 
 # Module 3: Client Registry
-# add_subdirectory(src/client_registry)
+add_subdirectory(src/client_registry)
 
 # Module 4: Resource Manager
 # add_subdirectory(src/resource_manager)
