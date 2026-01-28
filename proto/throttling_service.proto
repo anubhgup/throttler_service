@@ -1,0 +1,107 @@
+// Throttling Service Protocol Buffer Definition
+//
+// Story:
+// This module defines the gRPC service contract for the distributed throttling
+// service. The server tracks active clients via heartbeats and fairly distributes
+// rate limit quota among them. Clients run token bucket locally with their
+// allocated share.
+//
+// Key Design Decisions:
+// - Heartbeat returns allocations to minimize round trips
+// - All RPCs are unary (not streaming) for simplicity
+// - resource_id is int64 to allow large ID spaces
+// - rate_limit is double to support fractional RPS
+
+syntax = "proto3";
+
+package throttling;
+
+option cc_enable_arenas = true;
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+// RegisterClient: Client announces its presence to the server
+message RegisterClientRequest {
+  string client_id = 1;  // Unique identifier (e.g., "hostname-pid-uuid")
+}
+
+message RegisterClientResponse {
+  bool success = 1;
+  string error_message = 2;  // Populated if success=false
+}
+
+// UnregisterClient: Client gracefully disconnects
+message UnregisterClientRequest {
+  string client_id = 1;
+}
+
+message UnregisterClientResponse {
+  bool success = 1;
+}
+
+// Heartbeat: Keep-alive + declare resource interest + receive allocations
+message HeartbeatRequest {
+  string client_id = 1;
+  repeated int64 resource_ids = 2;  // Resources this client is interested in
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+  map<int64, double> allocations = 2;  // resource_id -> allocated_rate (RPS)
+  string error_message = 3;  // Populated if success=false
+}
+
+// GetAllocation: On-demand query for a specific resource's allocation
+message GetAllocationRequest {
+  string client_id = 1;
+  int64 resource_id = 2;
+}
+
+message GetAllocationResponse {
+  bool success = 1;
+  double allocated_rate = 2;  // Requests per second allocated to this client
+  string error_message = 3;   // Populated if success=false
+}
+
+// SetResourceLimit: Admin operation to configure a resource's rate limit
+message SetResourceLimitRequest {
+  int64 resource_id = 1;
+  double rate_limit = 2;  // Total requests per second for this resource
+}
+
+message SetResourceLimitResponse {
+  bool success = 1;
+  string error_message = 2;  // Populated if success=false
+}
+
+// GetResourceLimit: Query current configuration of a resource
+message GetResourceLimitRequest {
+  int64 resource_id = 1;
+}
+
+message GetResourceLimitResponse {
+  bool success = 1;
+  double rate_limit = 2;           // Total RPS configured for this resource
+  int32 active_client_count = 3;   // Number of clients interested in this resource
+  string error_message = 4;        // Populated if success=false
+}
+
+// ============================================================================
+// Service Definition
+// ============================================================================
+
+service ThrottlingService {
+  // Client lifecycle management
+  rpc RegisterClient(RegisterClientRequest) returns (RegisterClientResponse);
+  rpc UnregisterClient(UnregisterClientRequest) returns (UnregisterClientResponse);
+
+  // Heartbeat and allocation
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc GetAllocation(GetAllocationRequest) returns (GetAllocationResponse);
+
+  // Resource configuration (admin operations)
+  rpc SetResourceLimit(SetResourceLimitRequest) returns (SetResourceLimitResponse);
+  rpc GetResourceLimit(GetResourceLimitRequest) returns (GetResourceLimitResponse);
+}

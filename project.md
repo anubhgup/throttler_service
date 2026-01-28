@@ -97,10 +97,13 @@ A distributed rate limiting service where:
 - `GetAllocation(client_id, resource_id)` - Get allocated rate for a resource
 - `SetResourceLimit(resource_id, rate_limit)` - Admin: configure resource limits
 - `UnregisterClient(client_id)` - Client gracefully disconnects
+- `GetResourceLimit(resource_id)` - Query resource configuration
 
-**Story**: _To be written_
+**Story**: Defines the gRPC service contract. Heartbeat returns allocations to minimize
+round trips. All RPCs are unary for simplicity. resource_id is int64, rates are double
+to support fractional RPS.
 
-**Status**: Not started
+**Status**: ✅ Complete
 
 ---
 
@@ -289,4 +292,4 @@ throttling_service/
 
 | Date | Module | Progress |
 |------|--------|----------|
-| | | |
+| Jan 28, 2026 | Proto/API | Complete - proto file and CMake setup |
