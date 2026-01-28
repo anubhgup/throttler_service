@@ -13,69 +13,6 @@ Failure to stop at checkpoints defeats the purpose of collaborative development.
 
 ---
 
-## Coding Style
-
-### C++ Style Guide
-
-**All C++ code MUST follow the Google C++ Style Guide:** https://google.github.io/styleguide/cppguide.html
-
-**Key Points:**
-- **Naming:**
-  - Classes/Structs: `PascalCase` (e.g., `ResourceManager`)
-  - Functions/Methods: `PascalCase` (e.g., `GetResource()`)
-  - Variables: `snake_case` (e.g., `resource_id`)
-  - Member variables: `snake_case_` with trailing underscore (e.g., `mutex_`)
-  - Constants: `kPascalCase` (e.g., `kDefaultTimeout`)
-  - Enums: `kPascalCase` for values (e.g., `kTokenBucket`)
-
-- **Formatting:**
-  - 2-space indentation
-  - 80-character line limit (soft limit, 100 hard limit)
-  - Opening braces on same line
-  - Spaces around operators
-
-- **Headers:**
-  - Use `#pragma once` or include guards (`#ifndef`/`#define`/`#endif`)
-  - Include what you use (IWYU)
-  - Order: related header, C system, C++ standard, other libraries, project headers
-
-- **Comments:**
-  - Use `//` for single-line comments
-  - Use `/* */` for multi-line comments sparingly
-  - Document public APIs with `///` or `/** */` for Doxygen
-
-### Go Style Guide
-
-**All Go code MUST follow the Google Go Style Guide:** https://google.github.io/styleguide/go/
-
-**Key Points:**
-- **Naming:**
-  - Exported (public): `PascalCase` (e.g., `ResourceManager`, `GetResource`)
-  - Unexported (private): `camelCase` (e.g., `resourceManager`, `getResource`)
-  - Acronyms: all caps (e.g., `HTTPServer`, `XMLParser`, `ID`)
-  - Interfaces: single-method interfaces often end in `-er` (e.g., `Reader`, `Writer`)
-
-- **Formatting:**
-  - Use `gofmt` / `goimports` (mandatory, no exceptions)
-  - Tabs for indentation
-  - No line length limit, but break long lines sensibly
-
-- **Packages:**
-  - Package names: lowercase, single word, no underscores (e.g., `throttler`, `ratelimit`)
-  - Avoid stutter (e.g., `throttler.Client` not `throttler.ThrottlerClient`)
-
-- **Comments:**
-  - Doc comments start with the name being documented (e.g., `// Client represents...`)
-  - Complete sentences with proper punctuation
-  - Use `//` for all comments
-
-- **Error Handling:**
-  - Always check errors
-  - Return errors, don't panic
-  - Wrap errors with context using `fmt.Errorf("context: %w", err)`
-
----
-
 ## 1. Project Structure
 
 - **Ask the developer for the programming language** before proposing modules
@@ -275,3 +212,66 @@ Execution state represents the intermediate state your code will use during proc
        ↓
 4. Move to next module (repeat step 3)
 ```
+
+---
+
+## Coding Style
+
+### C++ Style Guide
+
+**All C++ code MUST follow the Google C++ Style Guide:** https://google.github.io/styleguide/cppguide.html
+
+**Key Points:**
+- **Naming:**
+  - Classes/Structs: `PascalCase` (e.g., `ResourceManager`)
+  - Functions/Methods: `PascalCase` (e.g., `GetResource()`)
+  - Variables: `snake_case` (e.g., `resource_id`)
+  - Member variables: `snake_case_` with trailing underscore (e.g., `mutex_`)
+  - Constants: `kPascalCase` (e.g., `kDefaultTimeout`)
+  - Enums: `kPascalCase` for values (e.g., `kTokenBucket`)
+
+- **Formatting:**
+  - 2-space indentation
+  - 80-character line limit (soft limit, 100 hard limit)
+  - Opening braces on same line
+  - Spaces around operators
+
+- **Headers:**
+  - Use `#pragma once` or include guards (`#ifndef`/`#define`/`#endif`)
+  - Include what you use (IWYU)
+  - Order: related header, C system, C++ standard, other libraries, project headers
+
+- **Comments:**
+  - Use `//` for single-line comments
+  - Use `/* */` for multi-line comments sparingly
+  - Document public APIs with `///` or `/** */` for Doxygen
+
+### Go Style Guide
+
+**All Go code MUST follow the Google Go Style Guide:** https://google.github.io/styleguide/go/
+
+**Key Points:**
+- **Naming:**
+  - Exported (public): `PascalCase` (e.g., `ResourceManager`, `GetResource`)
+  - Unexported (private): `camelCase` (e.g., `resourceManager`, `getResource`)
+  - Acronyms: all caps (e.g., `HTTPServer`, `XMLParser`, `ID`)
+  - Interfaces: single-method interfaces often end in `-er` (e.g., `Reader`, `Writer`)
+
+- **Formatting:**
+  - Use `gofmt` / `goimports` (mandatory, no exceptions)
+  - Tabs for indentation
+  - No line length limit, but break long lines sensibly
+
+- **Packages:**
+  - Package names: lowercase, single word, no underscores (e.g., `throttler`, `ratelimit`)
+  - Avoid stutter (e.g., `throttler.Client` not `throttler.ThrottlerClient`)
+
+- **Comments:**
+  - Doc comments start with the name being documented (e.g., `// Client represents...`)
+  - Complete sentences with proper punctuation
+  - Use `//` for all comments
+
+- **Error Handling:**
+  - Always check errors
+  - Return errors, don't panic
+  - Wrap errors with context using `fmt.Errorf("context: %w", err)`
