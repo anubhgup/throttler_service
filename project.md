@@ -198,14 +198,18 @@ callbacks are no-ops since allocations are calculated on query.
 - `tests/throttling_server_test.cc`
 
 **Key Components**:
-- Implement gRPC service handlers
-- Wire together Client Registry and Resource Manager
-- Handle concurrent requests
-- Graceful shutdown
+- `ThrottlingServiceImpl` - gRPC service implementation
+- Thin handlers that delegate to ClientRegistry and ResourceManager
+- gRPC error codes: INVALID_ARGUMENT, NOT_FOUND
+- Stateless design - all state in dependencies
 
-**Story**: _To be written_
+**Story**: Implements gRPC service handlers. Handlers validate input, delegate to
+ClientRegistry/ResourceManager, and build responses. Uses gRPC error codes for
+error cases. Stateless design ensures thread safety.
 
-**Status**: Not started
+**Status**: ✅ Complete
+
+**Coverage**: 100% (throttling_server.cc)
 
 ---
 
@@ -313,3 +317,4 @@ throttling_service/
 | Jan 28, 2026 | Token Bucket | Complete - 40 tests, 96.4% coverage |
 | Jan 28, 2026 | Client Registry | Complete - 25 tests, 99.1% coverage |
 | Jan 28, 2026 | Resource Manager | Complete - 30 tests, 98.2% coverage |
+| Jan 28, 2026 | gRPC Server | Complete - 22 tests, 100% coverage |

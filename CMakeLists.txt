@@ -161,3 +161,10 @@ target_link_libraries(resource_manager_test
   resource_manager
 )
 gtest_discover_tests(resource_manager_test)
+
+add_executable(throttling_server_test tests/throttling_server_test.cc)
+target_link_libraries(throttling_server_test
+  GTest::gtest_main
+  throttling_server
+)
+gtest_discover_tests(throttling_server_test)
