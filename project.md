@@ -145,15 +145,20 @@ rate first). Clock is injectable for testing without sleeps.
 - `tests/client_registry_test.cc`
 
 **Key Components**:
-- Register/unregister clients
-- Track last heartbeat timestamp per client
-- Expire stale clients (missed heartbeats)
-- Track which resources each client is interested in
+- `ClientRegistryListener` interface for notifications
+- `ClientInfo` struct with heartbeat time and resource interests
+- `ClientRegistry` class with registration, heartbeat, unregistration
+- Reverse index: `resource_to_clients_` for efficient queries
+- Lazy expiration during operations (no background thread)
 - Thread-safe with mutex protection
 
-**Story**: _To be written_
+**Story**: Tracks clients via registration and heartbeats. Maintains reverse index for
+efficient "clients for resource" queries. Lazy expiration removes stale clients during
+operations. Listener notified of join/leave and interest changes.
 
-**Status**: Not started
+**Status**: ✅ Complete
+
+**Coverage**: 99.1% (client_registry.cc) - Uncovered: defensive early return
 
 ---
 
@@ -301,3 +306,4 @@ throttling_service/
 |------|--------|----------|
 | Jan 28, 2026 | Proto/API | Complete - proto file and CMake setup |
 | Jan 28, 2026 | Token Bucket | Complete - 40 tests, 96.4% coverage |
+| Jan 28, 2026 | Client Registry | Complete - 25 tests, 99.1% coverage |

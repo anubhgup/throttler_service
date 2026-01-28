@@ -177,8 +177,8 @@ void ClientRegistry::ExpireStaleClients() const {
 
 bool ClientRegistry::IsClientStaleLocked(const ClientInfo& info) const {
   auto now = clock_->Now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-      now - info.last_heartbeat_time);
+  auto elapsed = now - info.last_heartbeat_time;
+  // Compare in the same unit for precision
   return elapsed > heartbeat_timeout_;
 }
 

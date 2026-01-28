@@ -147,3 +147,10 @@ target_link_libraries(token_bucket_test
   token_bucket
 )
 gtest_discover_tests(token_bucket_test)
+
+add_executable(client_registry_test tests/client_registry_test.cc)
+target_link_libraries(client_registry_test
+  GTest::gtest_main
+  client_registry
+)
+gtest_discover_tests(client_registry_test)
