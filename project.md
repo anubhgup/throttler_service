@@ -172,14 +172,19 @@ operations. Listener notified of join/leave and interest changes.
 - `tests/resource_manager_test.cc`
 
 **Key Components**:
-- Store rate limits per `resource_id`
-- Calculate fair share: `rate_limit / num_active_clients`
-- Notify/rebalance when clients join/leave
+- `ResourceInfo` struct with rate_limit and client count
+- `ResourceManager` class implementing `ClientRegistryListener`
+- Dynamic allocation: `rate_limit / num_interested_clients`
+- No caching - always calculated fresh for consistency
 - CRUD operations for resource limits
 
-**Story**: _To be written_
+**Story**: Manages resources and calculates fair allocation dynamically.
+allocation = rate_limit / num_interested_clients. ClientRegistryListener
+callbacks are no-ops since allocations are calculated on query.
 
-**Status**: Not started
+**Status**: ✅ Complete
+
+**Coverage**: 98.2% (resource_manager.cc) - Uncovered: defensive zero-clients check
 
 ---
 
@@ -307,3 +312,4 @@ throttling_service/
 | Jan 28, 2026 | Proto/API | Complete - proto file and CMake setup |
 | Jan 28, 2026 | Token Bucket | Complete - 40 tests, 96.4% coverage |
 | Jan 28, 2026 | Client Registry | Complete - 25 tests, 99.1% coverage |
+| Jan 28, 2026 | Resource Manager | Complete - 30 tests, 98.2% coverage |

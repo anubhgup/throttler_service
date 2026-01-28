@@ -154,3 +154,10 @@ target_link_libraries(client_registry_test
   client_registry
 )
 gtest_discover_tests(client_registry_test)
+
+add_executable(resource_manager_test tests/resource_manager_test.cc)
+target_link_libraries(resource_manager_test
+  GTest::gtest_main
+  resource_manager
+)
+gtest_discover_tests(resource_manager_test)
