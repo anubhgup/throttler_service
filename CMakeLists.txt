@@ -106,7 +106,7 @@ add_subdirectory(src/client_registry)
 add_subdirectory(src/resource_manager)
 
 # Module 5: gRPC Server
-# add_subdirectory(src/server)
+add_subdirectory(src/server)
 
 # Module 6: Client Library
 # add_subdirectory(src/client)
