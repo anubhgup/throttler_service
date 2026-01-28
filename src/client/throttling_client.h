@@ -37,6 +37,89 @@
 
 namespace throttling {
 
+// ============================================================================
+// Stub Interface for Dependency Injection
+// ============================================================================
+
+/// Interface for throttling service RPC calls.
+/// Allows mocking for unit tests.
+class ThrottlingStubInterface {
+ public:
+  virtual ~ThrottlingStubInterface() = default;
+
+  virtual grpc::Status RegisterClient(const RegisterClientRequest& request,
+                                      RegisterClientResponse* response) = 0;
+
+  virtual grpc::Status UnregisterClient(const UnregisterClientRequest& request,
+                                        UnregisterClientResponse* response) = 0;
+
+  virtual grpc::Status Heartbeat(const HeartbeatRequest& request,
+                                 HeartbeatResponse* response) = 0;
+};
+
+/// Real stub implementation that wraps the gRPC-generated stub.
+class RealThrottlingStub : public ThrottlingStubInterface {
+ public:
+  explicit RealThrottlingStub(const std::string& server_address);
+
+  grpc::Status RegisterClient(const RegisterClientRequest& request,
+                              RegisterClientResponse* response) override;
+
+  grpc::Status UnregisterClient(const UnregisterClientRequest& request,
+                                UnregisterClientResponse* response) override;
+
+  grpc::Status Heartbeat(const HeartbeatRequest& request,
+                         HeartbeatResponse* response) override;
+
+ private:
+  std::shared_ptr<grpc::Channel> channel_;
+  std::unique_ptr<ThrottlingService::Stub> stub_;
+};
+
+/// Fake stub for testing - configurable responses.
+class FakeThrottlingStub : public ThrottlingStubInterface {
+ public:
+  FakeThrottlingStub() = default;
+
+  grpc::Status RegisterClient(const RegisterClientRequest& request,
+                              RegisterClientResponse* response) override;
+
+  grpc::Status UnregisterClient(const UnregisterClientRequest& request,
+                                UnregisterClientResponse* response) override;
+
+  grpc::Status Heartbeat(const HeartbeatRequest& request,
+                         HeartbeatResponse* response) override;
+
+  // Configuration for test scenarios
+  void SetRegisterResult(grpc::Status status);
+  void SetUnregisterResult(grpc::Status status);
+  void SetHeartbeatResult(grpc::Status status);
+  void SetAllocations(const std::map<int64_t, double>& allocations);
+
+  // Inspection for tests
+  int GetRegisterCallCount() const { return register_call_count_; }
+  int GetUnregisterCallCount() const { return unregister_call_count_; }
+  int GetHeartbeatCallCount() const { return heartbeat_call_count_; }
+  std::string GetLastClientId() const { return last_client_id_; }
+  std::set<int64_t> GetLastResourceIds() const { return last_resource_ids_; }
+
+ private:
+  grpc::Status register_status_ = grpc::Status::OK;
+  grpc::Status unregister_status_ = grpc::Status::OK;
+  grpc::Status heartbeat_status_ = grpc::Status::OK;
+  std::map<int64_t, double> allocations_;
+
+  int register_call_count_ = 0;
+  int unregister_call_count_ = 0;
+  int heartbeat_call_count_ = 0;
+  std::string last_client_id_;
+  std::set<int64_t> last_resource_ids_;
+};
+
+// ============================================================================
+// ThrottlingClient
+// ============================================================================
+
 /// Client library for the throttling service.
 ///
 /// Handles server communication, automatic heartbeats, and local rate limiting.
@@ -57,14 +140,23 @@ namespace throttling {
 ///   client.Stop();
 class ThrottlingClient {
  public:
-  /// Constructs a throttling client.
+  /// Constructs a throttling client with server address.
   ///
   /// @param server_address Server address (e.g., "localhost:50051").
   /// @param client_id Unique identifier for this client.
   /// @param heartbeat_interval How often to send heartbeats (default: 10s).
   ThrottlingClient(const std::string& server_address,
                    const std::string& client_id,
-                   std::chrono::seconds heartbeat_interval = std::chrono::seconds(10));
+                   std::chrono::milliseconds heartbeat_interval = std::chrono::seconds(10));
+
+  /// Constructs a throttling client with injected stub (for testing).
+  ///
+  /// @param stub Stub implementation (takes ownership).
+  /// @param client_id Unique identifier for this client.
+  /// @param heartbeat_interval How often to send heartbeats (default: 10s).
+  ThrottlingClient(std::unique_ptr<ThrottlingStubInterface> stub,
+                   const std::string& client_id,
+                   std::chrono::milliseconds heartbeat_interval = std::chrono::seconds(10));
 
   /// Destructor. Calls Stop() if running.
   ~ThrottlingClient();
@@ -139,13 +231,11 @@ class ThrottlingClient {
   void UpdateTokenBuckets(const std::map<int64_t, double>& allocations);
 
   // Configuration
-  std::string server_address_;
   std::string client_id_;
-  std::chrono::seconds heartbeat_interval_;
+  std::chrono::milliseconds heartbeat_interval_;
 
-  // gRPC
-  std::shared_ptr<grpc::Channel> channel_;
-  std::unique_ptr<ThrottlingService::Stub> stub_;
+  // gRPC stub (injectable for testing)
+  std::unique_ptr<ThrottlingStubInterface> stub_;
 
   // Resource interests (protected by mutex_)
   std::set<int64_t> resource_interests_;

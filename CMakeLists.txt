@@ -169,3 +169,10 @@ target_link_libraries(throttling_server_test
   throttling_server
 )
 gtest_discover_tests(throttling_server_test)
+
+add_executable(throttling_client_test tests/throttling_client_test.cc)
+target_link_libraries(throttling_client_test
+  GTest::gtest_main
+  throttling_client
+)
+gtest_discover_tests(throttling_client_test)

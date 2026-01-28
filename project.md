@@ -223,15 +223,24 @@ error cases. Stateless design ensures thread safety.
 - `tests/throttling_client_test.cc`
 
 **Key Components**:
-- Automatic heartbeat thread
-- Local `TokenBucket` per resource
-- `Acquire(resource_id)` - Check local bucket
-- Handle allocation updates from server
-- Reconnection logic
+- `ThrottlingStubInterface` - Abstract interface for dependency injection
+- `RealThrottlingStub` - Production gRPC stub wrapper
+- `FakeThrottlingStub` - Test stub with configurable responses
+- `ThrottlingClient` - Main client class
+- Automatic heartbeat thread updates allocations
+- Worker thread processes queued acquire requests
+- Local `TokenBucket` per resource for fast rate limiting
+- `Acquire(resource_id, count, callback)` - Execute callback when tokens available
 
-**Story**: _To be written_
+**Story**: Client-side SDK handles server communication, automatic heartbeats, and local
+token bucket rate limiting. Acquire() tries to consume tokens immediately; if unavailable,
+queues the request for the worker thread. Worker thread retries until tokens refill,
+then executes callback. Heartbeat thread sends interests and updates token bucket rates
+from server allocations. Stub interface allows mock injection for testing.
 
-**Status**: Not started
+**Status**: ✅ Complete
+
+**Coverage**: 94.15% (throttling_client.cc) - Uncovered: RealThrottlingStub (requires server)
 
 ---
 
@@ -323,3 +332,4 @@ throttling_service/
 | Jan 28, 2026 | Resource Manager | Complete - 30 tests, 98.2% coverage |
 | Jan 28, 2026 | gRPC Server | Complete - 22 tests, 100% coverage |
 | Jan 28, 2026 | Main Application | Complete - server entry point |
+| Jan 28, 2026 | Client Library | Complete - 34 tests, 94.15% coverage |
