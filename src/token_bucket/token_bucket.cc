@@ -5,15 +5,16 @@
 #include "token_bucket.h"
 
 #include <algorithm>
-#include <cassert>
 
 namespace throttling {
 
-TokenBucket::TokenBucket(double rate, double burst_size)
-    : rate_(std::max(0.0, rate)),
+TokenBucket::TokenBucket(double rate, double burst_size,
+                         std::shared_ptr<Clock> clock)
+    : clock_(clock ? std::move(clock) : std::make_shared<RealClock>()),
+      rate_(std::max(0.0, rate)),
       burst_size_(0.0),
       tokens_(0.0),
-      last_refill_time_(std::chrono::steady_clock::now()) {
+      last_refill_time_(clock_->Now()) {
   // Determine burst_size_:
   // - If burst_size < 0 (including default -1.0): use rate as default
   // - If burst_size == 0: explicit zero (bucket always empty)
@@ -81,7 +82,7 @@ double TokenBucket::GetAvailableTokens() {
 }
 
 void TokenBucket::RefillLocked() {
-  auto now = std::chrono::steady_clock::now();
+  auto now = clock_->Now();
 
   // Calculate elapsed time in seconds
   auto elapsed = std::chrono::duration<double>(now - last_refill_time_);

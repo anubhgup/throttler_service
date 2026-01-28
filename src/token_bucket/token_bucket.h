@@ -12,13 +12,70 @@
 //
 // Thread Safety:
 // All public methods are thread-safe (protected by mutex).
+//
+// Testability:
+// A Clock interface is injected for deterministic testing without sleeps.
 
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 
 namespace throttling {
+
+// =============================================================================
+// Clock Interface
+// =============================================================================
+
+/// Abstract interface for obtaining the current time.
+/// Allows dependency injection for testing.
+class Clock {
+ public:
+  virtual ~Clock() = default;
+
+  /// Returns the current time point.
+  virtual std::chrono::steady_clock::time_point Now() const = 0;
+};
+
+/// Real clock implementation using std::chrono::steady_clock.
+/// Use this in production code.
+class RealClock : public Clock {
+ public:
+  std::chrono::steady_clock::time_point Now() const override {
+    return std::chrono::steady_clock::now();
+  }
+};
+
+/// Fake clock for testing. Time is manually controlled via Advance().
+/// Starts at time_point{} (epoch).
+class FakeClock : public Clock {
+ public:
+  std::chrono::steady_clock::time_point Now() const override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return current_time_;
+  }
+
+  /// Advances the clock by the specified duration.
+  void Advance(std::chrono::steady_clock::duration duration) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    current_time_ += duration;
+  }
+
+  /// Sets the clock to a specific time point.
+  void SetTime(std::chrono::steady_clock::time_point time) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    current_time_ = time;
+  }
+
+ private:
+  mutable std::mutex mutex_;
+  std::chrono::steady_clock::time_point current_time_{};
+};
+
+// =============================================================================
+// Token Bucket
+// =============================================================================
 
 /// Thread-safe token bucket rate limiter.
 ///
@@ -39,9 +96,11 @@ class TokenBucket {
   /// @param rate Tokens added per second. Must be >= 0.
   /// @param burst_size Maximum tokens the bucket can hold.
   ///                   If < 0, defaults to rate. If 0, bucket starts empty and stays empty.
+  /// @param clock Clock implementation for time. If nullptr, uses RealClock.
   ///
   /// The bucket starts full (tokens = burst_size).
-  explicit TokenBucket(double rate, double burst_size = -1.0);
+  explicit TokenBucket(double rate, double burst_size = -1.0,
+                       std::shared_ptr<Clock> clock = nullptr);
 
   // Non-copyable, non-movable (due to mutex)
   TokenBucket(const TokenBucket&) = delete;
@@ -87,6 +146,9 @@ class TokenBucket {
   /// Refills the bucket based on elapsed time.
   /// Must be called with mutex_ held.
   void RefillLocked();
+
+  // Clock
+  std::shared_ptr<Clock> clock_;
 
   // Configuration
   double rate_;        // Tokens per second

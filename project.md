@@ -117,14 +117,21 @@ to support fractional RPS.
 - `tests/token_bucket_test.cc`
 
 **Key Components**:
+- `Clock` interface with `RealClock` and `FakeClock` implementations
 - `TokenBucket` class with configurable rate and burst size
 - `TryConsume(tokens)` - Attempt to consume tokens (returns bool)
-- `Refill()` - Add tokens based on elapsed time
+- `SetRate(new_rate)` - Dynamically update rate
+- `SetBurstSize(new_burst_size)` - Dynamically update burst size
 - Thread-safe for concurrent use
+- Clock injection for deterministic testing
 
-**Story**: _To be written_
+**Story**: Implements token bucket algorithm. Bucket starts full, refills at configured
+rate, capped at burst_size. Rate/burst can be changed dynamically (refills with old
+rate first). Clock is injectable for testing without sleeps.
 
-**Status**: Not started
+**Status**: ✅ Complete
+
+**Coverage**: 96.4% (token_bucket.cc) - Uncovered: defensive clock anomaly handling
 
 ---
 
@@ -293,3 +300,4 @@ throttling_service/
 | Date | Module | Progress |
 |------|--------|----------|
 | Jan 28, 2026 | Proto/API | Complete - proto file and CMake setup |
+| Jan 28, 2026 | Token Bucket | Complete - 40 tests, 96.4% coverage |
