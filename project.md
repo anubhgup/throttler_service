@@ -243,14 +243,18 @@ error cases. Stateless design ensures thread safety.
 - `src/main.cc`
 
 **Key Components**:
-- Configuration parsing (port, heartbeat timeout, etc.)
-- Signal handling (SIGTERM, SIGINT)
-- Logging setup
-- Server lifecycle management
+- Command-line argument parsing (--port, --heartbeat-timeout, --help)
+- Signal handling (SIGINT, SIGTERM) with separate shutdown thread
+- Component initialization (ClientRegistry, ResourceManager, Service)
+- gRPC server lifecycle management
 
-**Story**: _To be written_
+**Story**: Entry point that parses config, initializes components, starts gRPC server,
+and handles graceful shutdown. Uses condition variable + thread pattern to avoid
+signal handler deadlock with gRPC mutexes.
 
-**Status**: Not started
+**Status**: ✅ Complete
+
+**Coverage**: N/A (entry point, tested manually)
 
 ---
 
@@ -318,3 +322,4 @@ throttling_service/
 | Jan 28, 2026 | Client Registry | Complete - 25 tests, 99.1% coverage |
 | Jan 28, 2026 | Resource Manager | Complete - 30 tests, 98.2% coverage |
 | Jan 28, 2026 | gRPC Server | Complete - 22 tests, 100% coverage |
+| Jan 28, 2026 | Main Application | Complete - server entry point |

@@ -112,14 +112,15 @@ add_subdirectory(src/server)
 # add_subdirectory(src/client)
 
 # ============================================================================
-# Main Executable (to be added in Module 7)
+# Main Executable
 # ============================================================================
 
-# add_executable(throttling_server src/main.cc)
-# target_link_libraries(throttling_server
-#   throttling_server_lib
-#   throttling_proto
-# )
+add_executable(throttling_server_bin src/main.cc)
+target_link_libraries(throttling_server_bin
+  throttling_server
+  throttling_proto
+)
+set_target_properties(throttling_server_bin PROPERTIES OUTPUT_NAME throttling_server)
 
 # ============================================================================
 # Testing
