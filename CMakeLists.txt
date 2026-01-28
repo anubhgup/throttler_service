@@ -103,7 +103,7 @@ add_subdirectory(src/token_bucket)
 add_subdirectory(src/client_registry)
 
 # Module 4: Resource Manager
-# add_subdirectory(src/resource_manager)
+add_subdirectory(src/resource_manager)
 
 # Module 5: gRPC Server
 # add_subdirectory(src/server)
