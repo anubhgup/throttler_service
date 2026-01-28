@@ -37,10 +37,11 @@ class TokenBucket {
   /// Constructs a token bucket with the given rate and burst size.
   ///
   /// @param rate Tokens added per second. Must be >= 0.
-  /// @param burst_size Maximum tokens the bucket can hold. If <= 0, defaults to rate.
+  /// @param burst_size Maximum tokens the bucket can hold.
+  ///                   If < 0, defaults to rate. If 0, bucket starts empty and stays empty.
   ///
   /// The bucket starts full (tokens = burst_size).
-  explicit TokenBucket(double rate, double burst_size = 0.0);
+  explicit TokenBucket(double rate, double burst_size = -1.0);
 
   // Non-copyable, non-movable (due to mutex)
   TokenBucket(const TokenBucket&) = delete;

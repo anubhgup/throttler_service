@@ -30,7 +30,7 @@ message(STATUS "Using protobuf ${Protobuf_VERSION}")
 # Find gRPC
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GRPC REQUIRED grpc++)
-pkg_check_modules(GRPCPP REQUIRED grpc++_reflection)
+pkg_check_modules(GRPCPP grpc++_reflection)  # Optional
 
 # Find gRPC C++ plugin
 find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
@@ -140,7 +140,10 @@ FetchContent_MakeAvailable(googletest)
 
 include(GoogleTest)
 
-# Test executables will be added as modules are implemented
-# add_executable(token_bucket_test tests/token_bucket_test.cc)
-# target_link_libraries(token_bucket_test GTest::gtest_main token_bucket)
-# gtest_discover_tests(token_bucket_test)
+# Test executables
+add_executable(token_bucket_test tests/token_bucket_test.cc)
+target_link_libraries(token_bucket_test
+  GTest::gtest_main
+  token_bucket
+)
+gtest_discover_tests(token_bucket_test)

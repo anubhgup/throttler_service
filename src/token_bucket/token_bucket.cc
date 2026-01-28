@@ -11,11 +11,18 @@ namespace throttling {
 
 TokenBucket::TokenBucket(double rate, double burst_size)
     : rate_(std::max(0.0, rate)),
-      burst_size_(burst_size > 0.0 ? burst_size : rate_),
-      tokens_(burst_size_),
+      burst_size_(0.0),
+      tokens_(0.0),
       last_refill_time_(std::chrono::steady_clock::now()) {
-  // Ensure burst_size_ is non-negative even if rate was negative
-  burst_size_ = std::max(0.0, burst_size_);
+  // Determine burst_size_:
+  // - If burst_size < 0 (including default -1.0): use rate as default
+  // - If burst_size == 0: explicit zero (bucket always empty)
+  // - If burst_size > 0: use the provided value
+  if (burst_size < 0.0) {
+    burst_size_ = rate_;
+  } else {
+    burst_size_ = burst_size;
+  }
   tokens_ = burst_size_;
 }
 
