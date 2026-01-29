@@ -640,13 +640,98 @@ TEST(FakeThrottlingStubTest, SetUnregisterResult) {
   FakeThrottlingStub stub;
   stub.SetUnregisterResult(
       grpc::Status(grpc::StatusCode::INTERNAL, "Error"));
-  
   UnregisterClientRequest req;
   UnregisterClientResponse resp;
   auto status = stub.UnregisterClient(req, &resp);
-  
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(grpc::StatusCode::INTERNAL, status.error_code());
+}
+
+TEST(FakeThrottlingStubTest, SetResourceLimitTracksCall) {
+  FakeThrottlingStub stub;
+  EXPECT_EQ(0, stub.GetSetResourceLimitCallCount());
+  SetResourceLimitRequest req;
+  req.set_resource_id(42);
+  req.set_rate_limit(100.0);
+  SetResourceLimitResponse resp;
+  auto status = stub.SetResourceLimit(req, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(1, stub.GetSetResourceLimitCallCount());
+  EXPECT_EQ(42, stub.GetLastSetResourceId());
+  EXPECT_EQ(100.0, stub.GetLastSetRateLimit());
+}
+
+TEST(FakeThrottlingStubTest, SetSetResourceLimitResult) {
+  FakeThrottlingStub stub;
+  stub.SetSetResourceLimitResult(
+      grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Bad rate"));
+  SetResourceLimitRequest req;
+  SetResourceLimitResponse resp;
+  auto status = stub.SetResourceLimit(req, &resp);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(grpc::StatusCode::INVALID_ARGUMENT, status.error_code());
+}
+
+// ============================================================================
+// ThrottlingClient SetResourceLimit Tests
+// ============================================================================
+
+class SetResourceLimitTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    fake_stub_ = new FakeThrottlingStub();
+  }
+
+  std::unique_ptr<ThrottlingClient> CreateClient() {
+    return std::make_unique<ThrottlingClient>(
+        std::unique_ptr<ThrottlingStubInterface>(fake_stub_),
+        "test-client",
+        std::chrono::seconds(10));
+  }
+
+  FakeThrottlingStub* fake_stub_ = nullptr;
+};
+
+TEST_F(SetResourceLimitTest, SetResourceLimitSuccess) {
+  auto client = CreateClient();
+  bool result = client->SetResourceLimit(1, 100.0);
+  EXPECT_TRUE(result);
+  EXPECT_EQ(1, fake_stub_->GetSetResourceLimitCallCount());
+  EXPECT_EQ(1, fake_stub_->GetLastSetResourceId());
+  EXPECT_EQ(100.0, fake_stub_->GetLastSetRateLimit());
+}
+
+TEST_F(SetResourceLimitTest, SetResourceLimitFailure) {
+  fake_stub_->SetSetResourceLimitResult(
+      grpc::Status(grpc::StatusCode::UNAVAILABLE, "Server down"));
+  auto client = CreateClient();
+  bool result = client->SetResourceLimit(1, 100.0);
+  EXPECT_FALSE(result);
+  EXPECT_EQ(1, fake_stub_->GetSetResourceLimitCallCount());
+}
+
+TEST_F(SetResourceLimitTest, SetResourceLimitWithZeroRate) {
+  auto client = CreateClient();
+  bool result = client->SetResourceLimit(1, 0.0);
+  EXPECT_TRUE(result);
+  EXPECT_EQ(0.0, fake_stub_->GetLastSetRateLimit());
+}
+
+TEST_F(SetResourceLimitTest, SetResourceLimitMultipleCalls) {
+  auto client = CreateClient();
+  client->SetResourceLimit(1, 100.0);
+  client->SetResourceLimit(2, 200.0);
+  client->SetResourceLimit(1, 150.0);
+  EXPECT_EQ(3, fake_stub_->GetSetResourceLimitCallCount());
+  EXPECT_EQ(1, fake_stub_->GetLastSetResourceId());
+  EXPECT_EQ(150.0, fake_stub_->GetLastSetRateLimit());
+}
+
+TEST_F(SetResourceLimitTest, SetResourceLimitBeforeStart) {
+  auto client = CreateClient();
+  // Client not started - should still work (admin operation)
+  bool result = client->SetResourceLimit(1, 100.0);
+  EXPECT_TRUE(result);
 }
 
 }  // namespace

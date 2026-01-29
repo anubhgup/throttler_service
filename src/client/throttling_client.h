@@ -55,6 +55,9 @@ class ThrottlingStubInterface {
 
   virtual grpc::Status Heartbeat(const HeartbeatRequest& request,
                                  HeartbeatResponse* response) = 0;
+
+  virtual grpc::Status SetResourceLimit(const SetResourceLimitRequest& request,
+                                        SetResourceLimitResponse* response) = 0;
 };
 
 /// Real stub implementation that wraps the gRPC-generated stub.
@@ -70,6 +73,9 @@ class RealThrottlingStub : public ThrottlingStubInterface {
 
   grpc::Status Heartbeat(const HeartbeatRequest& request,
                          HeartbeatResponse* response) override;
+
+  grpc::Status SetResourceLimit(const SetResourceLimitRequest& request,
+                                SetResourceLimitResponse* response) override;
 
  private:
   std::shared_ptr<grpc::Channel> channel_;
@@ -90,30 +96,41 @@ class FakeThrottlingStub : public ThrottlingStubInterface {
   grpc::Status Heartbeat(const HeartbeatRequest& request,
                          HeartbeatResponse* response) override;
 
+  grpc::Status SetResourceLimit(const SetResourceLimitRequest& request,
+                                SetResourceLimitResponse* response) override;
+
   // Configuration for test scenarios
   void SetRegisterResult(grpc::Status status);
   void SetUnregisterResult(grpc::Status status);
   void SetHeartbeatResult(grpc::Status status);
+  void SetSetResourceLimitResult(grpc::Status status);
   void SetAllocations(const std::map<int64_t, double>& allocations);
 
   // Inspection for tests
   int GetRegisterCallCount() const { return register_call_count_; }
   int GetUnregisterCallCount() const { return unregister_call_count_; }
   int GetHeartbeatCallCount() const { return heartbeat_call_count_; }
+  int GetSetResourceLimitCallCount() const { return set_resource_limit_call_count_; }
   std::string GetLastClientId() const { return last_client_id_; }
   std::set<int64_t> GetLastResourceIds() const { return last_resource_ids_; }
+  int64_t GetLastSetResourceId() const { return last_set_resource_id_; }
+  double GetLastSetRateLimit() const { return last_set_rate_limit_; }
 
  private:
   grpc::Status register_status_ = grpc::Status::OK;
   grpc::Status unregister_status_ = grpc::Status::OK;
   grpc::Status heartbeat_status_ = grpc::Status::OK;
+  grpc::Status set_resource_limit_status_ = grpc::Status::OK;
   std::map<int64_t, double> allocations_;
 
   int register_call_count_ = 0;
   int unregister_call_count_ = 0;
   int heartbeat_call_count_ = 0;
+  int set_resource_limit_call_count_ = 0;
   std::string last_client_id_;
   std::set<int64_t> last_resource_ids_;
+  int64_t last_set_resource_id_ = 0;
+  double last_set_rate_limit_ = 0.0;
 };
 
 // ============================================================================
@@ -202,6 +219,17 @@ class ThrottlingClient {
   /// @param resource_id The resource to query.
   /// @return Allocation in requests per second, or 0 if not allocated.
   double GetAllocation(int64_t resource_id) const;
+
+  /// Sets the rate limit for a resource on the server.
+  ///
+  /// This is an admin operation that configures the total rate limit
+  /// for a resource. The server will fairly distribute this limit
+  /// among all interested clients.
+  ///
+  /// @param resource_id The resource to configure.
+  /// @param rate_limit Total requests per second for this resource.
+  /// @return true on success, false on error.
+  bool SetResourceLimit(int64_t resource_id, double rate_limit);
 
   /// Returns whether the client is running.
   bool IsRunning() const;

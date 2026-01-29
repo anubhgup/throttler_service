@@ -39,6 +39,13 @@ grpc::Status RealThrottlingStub::Heartbeat(
   return stub_->Heartbeat(&context, request, response);
 }
 
+grpc::Status RealThrottlingStub::SetResourceLimit(
+    const SetResourceLimitRequest& request,
+    SetResourceLimitResponse* response) {
+  grpc::ClientContext context;
+  return stub_->SetResourceLimit(&context, request, response);
+}
+
 // ============================================================================
 // FakeThrottlingStub Implementation
 // ============================================================================
@@ -93,6 +100,19 @@ void FakeThrottlingStub::SetHeartbeatResult(grpc::Status status) {
 void FakeThrottlingStub::SetAllocations(
     const std::map<int64_t, double>& allocations) {
   allocations_ = allocations;
+}
+
+grpc::Status FakeThrottlingStub::SetResourceLimit(
+    const SetResourceLimitRequest& request,
+    SetResourceLimitResponse* /*response*/) {
+  set_resource_limit_call_count_++;
+  last_set_resource_id_ = request.resource_id();
+  last_set_rate_limit_ = request.rate_limit();
+  return set_resource_limit_status_;
+}
+
+void FakeThrottlingStub::SetSetResourceLimitResult(grpc::Status status) {
+  set_resource_limit_status_ = status;
 }
 
 // ============================================================================
@@ -226,6 +246,23 @@ double ThrottlingClient::GetAllocation(int64_t resource_id) const {
     return 0.0;
   }
   return it->second->GetRate();
+}
+
+bool ThrottlingClient::SetResourceLimit(int64_t resource_id, double rate_limit) {
+  SetResourceLimitRequest request;
+  request.set_resource_id(resource_id);
+  request.set_rate_limit(rate_limit);
+
+  SetResourceLimitResponse response;
+  grpc::Status status = stub_->SetResourceLimit(request, &response);
+
+  if (!status.ok()) {
+    std::cerr << "SetResourceLimit failed: " << status.error_message()
+              << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
 bool ThrottlingClient::IsRunning() const {
